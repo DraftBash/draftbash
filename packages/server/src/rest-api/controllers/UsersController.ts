@@ -58,7 +58,6 @@ export class UsersController {
             } else if (error instanceof BadRequestError) {
                 res.status(400).send({ errorName: error.name, error: error.message });
             } else if (error instanceof Error) {
-                console.log(error);
                 res.status(500).send({ errorName: error.name, error: error.message });
             } else {
                 res.status(500).send({ error: 'An unknown error occurred.' });
@@ -92,7 +91,6 @@ export class UsersController {
                 res.status(401).json({ error: 'Unauthorized: Token is missing' });
             } else {
                 const jwtAuthorizationToken: string = authorizationHeader.split(' ')[1];
-                console.log(jwtAuthorizationToken);
                 const validatedUser: UserResponse = await this.validateJWTtokenUseCase.validateJWTtoken(jwtAuthorizationToken);
                 res.status(200).send(validatedUser);
             }

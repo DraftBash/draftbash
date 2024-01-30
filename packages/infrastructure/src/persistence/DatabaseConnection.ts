@@ -9,7 +9,7 @@ export class DatabaseConnection implements IDatabaseConnection {
     private pool: Pool;
 
     constructor() {
-        const connectionString = String(process.env.DATABASE_URL);
+        const connectionString: string = String(process.env.DATABASE_URL);
         this.pool = new Pool({ connectionString });
     }
 
