@@ -37,6 +37,8 @@ jobs:
       - name: Push Docker Image to Google Artifact Registry
         run: |
           docker push $IMAGE_NAME:${{ github.sha }}
+        
+        working-directory: ./nodeapp
 
   deploy:
     needs: build
@@ -64,3 +66,4 @@ jobs:
           terraform init
           terraform apply -auto-approve \
             -var="container_image=$IMAGE_NAME:${{ github.sha }}"
+        working-directory: ./terraform
