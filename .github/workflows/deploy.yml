@@ -15,26 +15,30 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
 
-      # Step 1: Set up Google Cloud SDK
+      # Step 1: Authenticate with Google Cloud
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v1
+        with:
+          credentials_json: ${{ secrets.GCP_CREDENTIALS }}
+
+      # Step 2: Set up Google Cloud SDK
       - name: Set up Google Cloud SDK
         uses: google-github-actions/setup-gcloud@v1
         with:
           version: 'latest'
-          service_account_key: ${{ secrets.GCP_CREDENTIALS }}
-          export_default_credentials: true
 
-      # Step 2: Configure Docker to use Google Artifact Registry
+      # Step 3: Configure Docker to use Google Artifact Registry
       - name: Configure Docker for Google Artifact Registry
         run: |
-          gcloud auth configure-docker us-central1-docker.pkg.dev
+          gcloud auth configure-docker us-central1-docker.pkg.dev --quiet
 
-      # Step 3: Build Docker image with dynamic tag (using Git SHA as version)
+      # Step 4: Build Docker image with dynamic tag (using Git SHA as version)
       - name: Build Docker Image
         run: |
           cd nodeapp
           docker build -t $IMAGE_NAME:${{ github.sha }} .
 
-      # Step 4: Push Docker image to Artifact Registry
+      # Step 5: Push Docker image to Artifact Registry
       - name: Push Docker Image to Google Artifact Registry
         run: |
           docker push $IMAGE_NAME:${{ github.sha }}
@@ -47,19 +51,23 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
 
-      # Step 5: Set up Google Cloud SDK
+      # Step 6: Authenticate with Google Cloud
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v1
+        with:
+          credentials_json: ${{ secrets.GCP_CREDENTIALS }}
+
+      # Step 7: Set up Google Cloud SDK
       - name: Set up Google Cloud SDK
         uses: google-github-actions/setup-gcloud@v1
         with:
           version: 'latest'
-          service_account_key: ${{ secrets.GCP_CREDENTIALS }}
-          export_default_credentials: true
 
-      # Step 6: Set up Terraform
+      # Step 8: Set up Terraform
       - name: Set up Terraform
         uses: hashicorp/setup-terraform@v2
 
-      # Step 7: Initialize and apply Terraform with the image name
+      # Step 9: Initialize and apply Terraform with the image name
       - name: Terraform Init and Apply
         run: |
           cd terraform
