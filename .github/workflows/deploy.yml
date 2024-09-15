@@ -31,14 +31,13 @@ jobs:
       # Step 3: Build Docker image with dynamic tag (using Git SHA as version)
       - name: Build Docker Image
         run: |
+          cd nodeapp
           docker build -t $IMAGE_NAME:${{ github.sha }} .
 
       # Step 4: Push Docker image to Artifact Registry
       - name: Push Docker Image to Google Artifact Registry
         run: |
           docker push $IMAGE_NAME:${{ github.sha }}
-        
-        working-directory: ./nodeapp
 
   deploy:
     needs: build
@@ -63,7 +62,7 @@ jobs:
       # Step 7: Initialize and apply Terraform with the image name
       - name: Terraform Init and Apply
         run: |
+          cd terraform
           terraform init
           terraform apply -auto-approve \
             -var="container_image=$IMAGE_NAME:${{ github.sha }}"
-        working-directory: ./terraform
