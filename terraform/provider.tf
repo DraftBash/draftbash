@@ -3,7 +3,6 @@ terraform {
     backend "gcs" {
         bucket  = "draftbash-terraform-state"
         prefix  = "terraform/state"
-        project = var.project_id
     }
 }
 provider "google" {
