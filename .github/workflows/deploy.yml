@@ -82,7 +82,6 @@ jobs:
       # Step 11: Plan and Apply Terraform with the image name
       - name: Terraform Plan and Apply
         run: |
-          cd terraform
-          export TF_LOG=DEBUG
-          terraform plan -var="container_image=$IMAGE_NAME:${{ github.sha }}"
-          terraform apply -auto-approve -var="container_image=$IMAGE_NAME:${{ github.sha }}" -input=false
+            cd terraform
+            terraform plan -var="container_image=$IMAGE_NAME:${{ github.sha }}" -var="project_id=${{ secrets.GCP_PROJECT_ID }}" -var="region=${{ secrets.GCP_REGION }}" -out=tfplan
+            terraform apply -auto-approve -var="container_image=$IMAGE_NAME:${{ github.sha }}" -var="project_id=${{ secrets.GCP_PROJECT_ID }}" -var="region=${{ secrets.GCP_REGION }}" -input=false
