@@ -22,7 +22,7 @@ jobs:
         with:
           token_format: 'access_token'
           workload_identity_provider: 'projects/1052820698779/locations/global/workloadIdentityPools/k8s-pool/providers/k8s-provider'
-          service_account: 'draftbash@${{ secrets.GCP_PROJECT_ID }}.iam.gserviceaccount.com'
+          service_account: 'draftbash@draftbash-435005.iam.gserviceaccount.com'
       - uses: 'google-github-actions/setup-gcloud@v1'
       - name: Docker auth
         run: gcloud auth configure-docker
