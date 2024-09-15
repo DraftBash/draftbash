@@ -1,7 +1,7 @@
 data "google_container_engine_versions" "default" {
     location = var.region
 }
-data "google_client_config" "current" {
+data "google_client_config" "default" {
 }
 
 resource "google_container_cluster" "default" {
