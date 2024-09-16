@@ -57,14 +57,19 @@ jobs:
         with:
           credentials_json: ${{ secrets.GCP_CREDENTIALS }}
 
-      # Step 7: Configure kubectl to use the GKE cluster
+      # Step 7: Install gke-gcloud-auth-plugin using gcloud
+      - name: Install gke-gcloud-auth-plugin
+        run: |
+          gcloud components install gke-gcloud-auth-plugin
+
+      # Step 8: Configure kubectl to use the GKE cluster
       - name: Get GKE credentials
         env:
           USE_GKE_GCLOUD_AUTH_PLUGIN: True
         run: |
           gcloud container clusters get-credentials draftbash-cluster --zone ${{ secrets.GCP_ZONE }} --project ${{ secrets.GCP_PROJECT_ID }}
 
-      # Step 8: Deploy to GKE
+      # Step 9: Deploy to GKE
       - name: Deploy to GKE
         run: |
           kubectl set image deployment/draftbash-deployment draftbash-container=$IMAGE_NAME:latest
