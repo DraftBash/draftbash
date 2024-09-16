@@ -10,7 +10,7 @@ jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
     steps:
-    
+
       # Checkout the code from the repository
       - name: Checkout code
         uses: actions/checkout@v3
@@ -21,6 +21,11 @@ jobs:
         with:
           project_id: ${{ secrets.GCP_PROJECT_ID }}
           credentials_json: ${{ secrets.GCP_CREDENTIALS }}
+
+      # Authenticate Docker with Google Artifact Registry
+      - name: Authenticate Docker with Google Artifact Registry
+        run: |
+          gcloud auth configure-docker us-central1-docker.pkg.dev
 
       # Build Docker image
       - name: Build Docker image
