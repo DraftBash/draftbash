@@ -57,20 +57,27 @@ jobs:
         with:
           credentials_json: ${{ secrets.GCP_CREDENTIALS }}
 
-      # Step 7: Install gke-gcloud-auth-plugin using apt-get
+      # Step 7: Add Google Cloud SDK apt repository
+      - name: Add Google Cloud SDK apt repository
+        run: |
+          echo "deb [signed-by=/usr/share/keyrings/cloud.google.gpg] https://packages.cloud.google.com/apt cloud-sdk main" | sudo tee -a /etc/apt/sources.list.d/google-cloud-sdk.list
+          sudo apt-get install -y apt-transport-https ca-certificates gnupg
+          curl https://packages.cloud.google.com/apt/doc/apt-key.gpg | sudo tee /usr/share/keyrings/cloud.google.gpg > /dev/null
+
+      # Step 8: Install gke-gcloud-auth-plugin
       - name: Install gke-gcloud-auth-plugin
         run: |
           sudo apt-get update
           sudo apt-get install -y google-cloud-cli-gke-gcloud-auth-plugin
 
-      # Step 8: Configure kubectl to use the GKE cluster
+      # Step 9: Configure kubectl to use the GKE cluster
       - name: Get GKE credentials
         env:
           USE_GKE_GCLOUD_AUTH_PLUGIN: True
         run: |
           gcloud container clusters get-credentials draftbash-cluster --zone ${{ secrets.GCP_ZONE }} --project ${{ secrets.GCP_PROJECT_ID }}
 
-      # Step 9: Deploy to GKE
+      # Step 10: Deploy to GKE
       - name: Deploy to GKE
         run: |
           kubectl set image deployment/draftbash-deployment draftbash-container=$IMAGE_NAME:latest
