@@ -1,87 +1,45 @@
-name: CI/CD Pipeline for GKE with Terraform
+name: Deploy to GKE
 
 on:
   push:
     branches:
       - main
+  workflow_dispatch:
 
 jobs:
-  build:
+  build-and-deploy:
     runs-on: ubuntu-latest
-    env:
-      IMAGE_NAME: us-central1-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/draftbash-repo/draftbash-app
-
     steps:
+    
+      # Checkout the code from the repository
       - name: Checkout code
         uses: actions/checkout@v3
 
-      # Step 1: Authenticate with Google Cloud
-      - name: Authenticate to Google Cloud
-        uses: google-github-actions/auth@v1
+      # Set up Google Cloud SDK
+      - name: Set up Google Cloud SDK
+        uses: google-github-actions/setup-gcloud@v2
         with:
+          project_id: ${{ secrets.GCP_PROJECT_ID }}
           credentials_json: ${{ secrets.GCP_CREDENTIALS }}
 
-      # Step 2: Set up Google Cloud SDK
-      - name: Set up Google Cloud SDK
-        uses: google-github-actions/setup-gcloud@v1
-        with:
-          version: 'latest'
-
-      # Step 3: Configure Docker to use Google Artifact Registry
-      - name: Configure Docker for Google Artifact Registry
-        run: |
-          gcloud auth configure-docker us-central1-docker.pkg.dev --quiet
-
-      # Step 4: Build Docker image with dynamic tag (using Git SHA as version)
-      - name: Build Docker Image
+      # Build Docker image
+      - name: Build Docker image
         run: |
           cd nodeapp
-          docker build -t $IMAGE_NAME:${{ github.sha }} .
+          docker build -t us-central1-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/draftbash-repo/draftbash-app:latest .
 
-      # Step 5: Push Docker image to Artifact Registry
-      - name: Push Docker Image to Google Artifact Registry
+      # Push Docker image to Google Artifact Registry
+      - name: Push Docker image
         run: |
-          docker push $IMAGE_NAME:${{ github.sha }}
+          docker push us-central1-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/draftbash-repo/draftbash-app:latest
 
-  deploy:
-    needs: build
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
-
-      # Step 6: Authenticate with Google Cloud
-      - name: Authenticate to Google Cloud
-        uses: google-github-actions/auth@v1
-        with:
-          credentials_json: ${{ secrets.GCP_CREDENTIALS }}
-
-      # Step 7: Set up Google Cloud SDK
-      - name: Set up Google Cloud SDK
-        uses: google-github-actions/setup-gcloud@v1
-        with:
-          version: 'latest'
-
-      # Step 8: Set up Terraform
-      - name: Set up Terraform
-        uses: hashicorp/setup-terraform@v2
-
-      # Step 9: Initialize Terraform
-      - name: Terraform Init
+      # Configure kubectl to use the GKE cluster
+      - name: Get GKE credentials
         run: |
-          cd terraform
-          terraform init
+          gcloud container clusters get-credentials draftbash-cluster --zone ${{ secrets.GCP_ZONE }} --project ${{ secrets.GCP_PROJECT_ID }}
 
-      # Step 10: Validate Terraform configuration
-      - name: Terraform Validate
+      # Deploy to GKE
+      - name: Deploy to GKE
         run: |
-          cd terraform
-          terraform validate
-
-      # Step 11: Plan and Apply Terraform with the image name
-      - name: Terraform Plan and Apply
-        run: |
-            cd terraform
-            terraform plan -var="container_image=$IMAGE_NAME:${{ github.sha }}" -var="project_id=${{ secrets.GCP_PROJECT_ID }}" -var="region=${{ secrets.GCP_REGION }}" -out=tfplan
-            terraform apply -auto-approve -var="container_image=$IMAGE_NAME:${{ github.sha }}" -var="project_id=${{ secrets.GCP_PROJECT_ID }}" -var="region=${{ secrets.GCP_REGION }}" -input=false
+          kubectl set image deployment/draftbash-deployment draftbash-container=us-central1-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/draftbash-repo/draftbash-app:latest
+          kubectl rollout status deployment/draftbash-deployment
