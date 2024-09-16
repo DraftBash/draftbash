@@ -1,42 +1,61 @@
-name: Deploy to GKE
+name: CI/CD Pipeline for GKE with Terraform
 
 on:
   push:
     branches:
       - main
-  workflow_dispatch:
 
 jobs:
-  build-and-deploy:
+  build:
     runs-on: ubuntu-latest
-    steps:
+    env:
+      IMAGE_NAME: us-central1-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/draftbash-repo/draftbash-app
 
-      # Checkout the code from the repository
+    steps:
       - name: Checkout code
         uses: actions/checkout@v3
 
-      # Set up Google Cloud SDK
-      - name: Set up Google Cloud SDK
-        uses: google-github-actions/setup-gcloud@v2
+      # Step 1: Authenticate with Google Cloud
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v1
         with:
-          project_id: ${{ secrets.GCP_PROJECT_ID }}
           credentials_json: ${{ secrets.GCP_CREDENTIALS }}
 
-      # Authenticate Docker with Google Artifact Registry
-      - name: Authenticate Docker with Google Artifact Registry
-        run: |
-          gcloud auth configure-docker us-central1-docker.pkg.dev
+      # Step 2: Set up Google Cloud SDK
+      - name: Set up Google Cloud SDK
+        uses: google-github-actions/setup-gcloud@v1
+        with:
+          version: 'latest'
 
-      # Build Docker image
-      - name: Build Docker image
+      # Step 3: Configure Docker to use Google Artifact Registry
+      - name: Configure Docker for Google Artifact Registry
+        run: |
+          gcloud auth configure-docker us-central1-docker.pkg.dev --quiet
+
+      # Step 4: Build Docker image with dynamic tag (using Git SHA as version)
+      - name: Build Docker Image
         run: |
           cd nodeapp
-          docker build -t us-central1-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/draftbash-repo/draftbash-app:latest .
+          docker build -t $IMAGE_NAME:latest .
 
-      # Push Docker image to Google Artifact Registry
-      - name: Push Docker image
+      # Step 5: Push Docker image to Artifact Registry
+      - name: Push Docker Image to Google Artifact Registry
         run: |
-          docker push us-central1-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/draftbash-repo/draftbash-app:latest
+          docker push $IMAGE_NAME:latest
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      # Step 6: Authenticate with Google Cloud
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v1
+        with:
+          credentials_json: ${{ secrets.GCP_CREDENTIALS }}
 
       # Configure kubectl to use the GKE cluster
       - name: Get GKE credentials
@@ -46,5 +65,5 @@ jobs:
       # Deploy to GKE
       - name: Deploy to GKE
         run: |
-          kubectl set image deployment/draftbash-deployment draftbash-container=us-central1-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/draftbash-repo/draftbash-app:latest
+          kubectl set image deployment/draftbash-deployment draftbash-container=$IMAGE_NAME:latest
           kubectl rollout status deployment/draftbash-deployment
