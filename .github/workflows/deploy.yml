@@ -80,4 +80,5 @@ jobs:
       - name: Deploy to GKE
         run: |
           kubectl set image deployment/draftbash-deployment draftbash-container=$IMAGE_NAME:latest
+          kubectl rollout restart deployment draftbash-deployment
           kubectl rollout status deployment/draftbash-deployment --timeout=5m
