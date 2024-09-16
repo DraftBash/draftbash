@@ -57,7 +57,8 @@ jobs:
           version: 'latest'
 
       - name: Install gke-cloud-auth-plugin
-        run: gcloud components install gke-gcloud-auth-plugin
+        run: |
+          gcloud components install gke-gcloud-auth-plugin
 
       # Step 6: Authenticate with Google Cloud
       - name: Authenticate to Google Cloud
@@ -65,15 +66,27 @@ jobs:
         with:
           credentials_json: ${{ secrets.GCP_CREDENTIALS }}
 
-      # Step 10: Configure kubectl to use the GKE cluster
+      # Step 7: Configure kubectl to use the GKE cluster
       - name: Get GKE credentials
         env:
           USE_GKE_GCLOUD_AUTH_PLUGIN: True
         run: |
           gcloud container clusters get-credentials draftbash-cluster --zone ${{ secrets.GCP_ZONE }} --project ${{ secrets.GCP_PROJECT_ID }}
 
-      # Step 11: Deploy to GKE
+      # Step 8: Verify Deployment
+      - name: Verify Deployment Configuration
+        run: |
+          kubectl describe deployment draftbash-deployment
+          kubectl get pods
+
+      # Step 9: Check Pod Logs
+      - name: Check Pod Logs
+        run: |
+          POD_NAME=$(kubectl get pods --selector=app=draftbash --output=jsonpath='{.items[0].metadata.name}')
+          kubectl logs $POD_NAME
+
+      # Step 10: Deploy to GKE
       - name: Deploy to GKE
         run: |
           kubectl set image deployment/draftbash-deployment draftbash-container=$IMAGE_NAME:latest
-          kubectl rollout status deployment/draftbash-deployment
+          kubectl rollout status deployment/draftbash-deployment --timeout=5m
