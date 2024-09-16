@@ -47,6 +47,9 @@ jobs:
     needs: build
     runs-on: ubuntu-latest
 
+    env:
+      IMAGE_NAME: us-central1-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/draftbash-repo/draftbash-app
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
@@ -72,18 +75,6 @@ jobs:
           USE_GKE_GCLOUD_AUTH_PLUGIN: True
         run: |
           gcloud container clusters get-credentials draftbash-cluster --zone ${{ secrets.GCP_ZONE }} --project ${{ secrets.GCP_PROJECT_ID }}
-
-      # Step 8: Verify Deployment
-      - name: Verify Deployment Configuration
-        run: |
-          kubectl describe deployment draftbash-deployment
-          kubectl get pods
-
-      # Step 9: Check Pod Logs
-      - name: Check Pod Logs
-        run: |
-          POD_NAME=$(kubectl get pods --selector=app=draftbash --output=jsonpath='{.items[0].metadata.name}')
-          kubectl logs $POD_NAME
 
       # Step 10: Deploy to GKE
       - name: Deploy to GKE
