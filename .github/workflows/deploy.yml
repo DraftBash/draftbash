@@ -57,10 +57,11 @@ jobs:
         with:
           credentials_json: ${{ secrets.GCP_CREDENTIALS }}
 
-      # Step 7: Install gke-gcloud-auth-plugin using gcloud
+      # Step 7: Install gke-gcloud-auth-plugin using apt-get
       - name: Install gke-gcloud-auth-plugin
         run: |
-          gcloud components install gke-gcloud-auth-plugin
+          sudo apt-get update
+          sudo apt-get install -y google-cloud-cli-gke-gcloud-auth-plugin
 
       # Step 8: Configure kubectl to use the GKE cluster
       - name: Get GKE credentials
